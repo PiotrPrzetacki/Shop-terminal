@@ -5,21 +5,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     private static String accountNum="11112222";
+    private static String ip = "localhost";
 
     public static void main(String[] args) {
         double amount = randomDouble(12, 400);
-        List<String> randomBliks = getRandomBliks(5);
-        List<Card> cards = getRandomCards(5);
-
-        System.out.println("amount = "+amount);
-        System.out.println("randomBliks = " + randomBliks);
-        System.out.println("cards:"); cards.forEach(System.out::println);
-        System.out.println("\nDo zapłaty: "+amount+" zł");
-
         platnosc(amount);
     }
 
@@ -62,6 +56,7 @@ public class Main {
     }
 
     private static void platnosc(double amount){
+        System.out.println("\nDo zapłaty: "+amount+" zł");
         System.out.print("(1) gotówka\n(2) karta\n(3) blik\nPodaj sposób płatności: ");
         Scanner sc = new Scanner(System.in);
         String input = sc.nextLine();
@@ -137,10 +132,12 @@ public class Main {
         String blik = sc.nextLine();
         if(blik.length() == 6){
             try {
-                OkHttpClient client = new OkHttpClient();
+                OkHttpClient client = new OkHttpClient.Builder()
+                        .readTimeout(40, TimeUnit.SECONDS)
+                        .build();
 
                 Request request = new Request.Builder()
-                        .url(String.format(Locale.US, "http://192.168.1.103:8080/blik/pay/"+blik+"/"+amount+"/"+accountNum))
+                        .url(String.format(Locale.US, "http://"+ip+":8080/blik/pay/"+blik+"/"+amount+"/"+accountNum))
                         .post(new RequestBody() {
                             @Override
                             public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
@@ -155,14 +152,34 @@ public class Main {
                         })
                         .build();
 
+                System.out.println("Oczekiwanie...");
                 try (Response response = client.newCall(request).execute()) {
-                    System.out.println(response.body().string());
-
+                    BlikTransactionStatus blikTransactionStatus = BlikTransactionStatus.valueOf(response.body().string().replace("\"", ""));
+                    if(blikTransactionStatus == BlikTransactionStatus.CONFIRMED){
+                        System.out.println("Transakcja potwierdzona");
+                        System.exit(0);
+                    }
+                    else if(blikTransactionStatus == BlikTransactionStatus.BAD_BLIK){
+                        System.out.println("Zły kod BLIK");
+                    }
+                    else if(blikTransactionStatus == BlikTransactionStatus.NO_CONFIRMATION){
+                        System.out.println("Brak potwierdzenia. Anulowanie transakcji\n");
+                    }
+                    else if(blikTransactionStatus == BlikTransactionStatus.BAD_TARGET_ACCOUNT){
+                        System.out.println("Złe konto odbiorcy");
+                    }
+                    else if(blikTransactionStatus == BlikTransactionStatus.NOT_ENOUGHT_MONEY){
+                        System.out.println("Niewystarczające środki na koncie");
+                    }
+                    platnosc(amount);
                 }
 
             }catch (NumberFormatException | IOException e){
                 System.out.println("Błędny kod. Spróbuj ponownie");
                 blikPay(amount);
+            }catch (IllegalArgumentException e){
+                System.out.println("Błąd banku");
+                e.printStackTrace();
             }
         }
         else{
