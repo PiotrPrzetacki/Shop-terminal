@@ -10,7 +10,8 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     private static String accountNum="11112222";
-    private static String ip = "localhost";
+    private static String bankIp = "localhost";
+    private static String dbIp = "localhost";
 
     public static void main(String[] args) {
         double amount = randomDouble(12, 400);
@@ -137,7 +138,7 @@ public class Main {
                         .build();
 
                 Request request = new Request.Builder()
-                        .url(String.format(Locale.US, "http://"+ip+":8080/blik/pay/"+blik+"/"+amount+"/"+accountNum))
+                        .url(String.format(Locale.US, "http://"+ bankIp +":8080/blik/pay/"+blik+"/"+amount+"/"+accountNum))
                         .post(new RequestBody() {
                             @Override
                             public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
