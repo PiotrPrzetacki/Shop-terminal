@@ -4,17 +4,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
 
     private static String accountNum="11112222";
-    private static String bankIp = "localhost";
+    private static String bankIp = "192.168.1.125";
     private static String dbIp = "localhost";
 
-    public static void main(String[] args) {
-        double amount = randomDouble(12, 400);
+    public static void main(String[] args) throws IOException {
+        double amount = 23.12d;
         platnosc(amount);
     }
 
@@ -187,5 +188,28 @@ public class Main {
             System.out.println("Błędny kod. Spróbuj ponownie");
             blikPay(amount);
         }
+    }
+
+    private static double scanProducts(){
+        System.out.println("Zeskanuj produkty");
+        double amount = 0d;
+        Scanner sc = new Scanner(System.in);
+        int counter = 1;
+        while (true){
+            String code = sc.nextLine();
+            if(code.equals("")){
+                break;
+            }
+            try {
+                //Product product = CodeReader.checkCode(code);
+                Product product = new Product("123124124", "Produkt", BigDecimal.valueOf(12.99));
+                amount += product.getPrice().doubleValue();
+                System.out.println(counter + "\t" + product.getName() + "\t" + product.getPrice());
+                counter++;
+            } catch (Exception e) {
+                System.out.println("nie znaleziono produktu");
+            }
+        }
+        return amount;
     }
 }
