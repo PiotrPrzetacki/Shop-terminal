@@ -5,22 +5,16 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 public class CodeReader {
+    private ProductsData productsData;
 
-    private static String scannerIp = "http://localhost:8080";
-
-    public static Product checkCode(String scannedCode) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(scannerIp + "/product/" + scannedCode).get().build();
-        Response response = client.newCall(request).execute();
-        JSONObject productJSON = new JSONObject(
-                response
-        );
-        Product product = new Product(productJSON.getString("code"),productJSON.getString("name"),
-                BigDecimal.valueOf(Double.parseDouble(productJSON.getString("price"))));
-
-        return product;
+    public CodeReader(ProductsData productsData) {
+        this.productsData = productsData;
     }
 
+    public Product getProductByCode(String code){
+        return productsData.getProductByCode(code);
+    }
 }

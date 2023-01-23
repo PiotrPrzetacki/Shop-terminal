@@ -3,6 +3,7 @@ import okio.BufferedSink;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
@@ -12,10 +13,9 @@ public class Main {
 
     private static String accountNum="11112222";
     private static String bankIp = "192.168.1.125";
-    private static String dbIp = "localhost";
 
     public static void main(String[] args) throws IOException {
-        double amount = 23.12d;
+        double amount = scanProducts();
         platnosc(amount);
     }
 
@@ -192,24 +192,30 @@ public class Main {
 
     private static double scanProducts(){
         System.out.println("Zeskanuj produkty");
-        double amount = 0d;
+        BigDecimal amount = new BigDecimal(0);
         Scanner sc = new Scanner(System.in);
         int counter = 1;
-        while (true){
-            String code = sc.nextLine();
-            if(code.equals("")){
-                break;
+        CodeReader codeReader = null;
+        try {
+            codeReader = new CodeReader(new CSVProductsData());
+            while (true){
+                String code = sc.nextLine();
+                if(code.equals("")){
+                    break;
+                }
+                try {
+                    Product product = codeReader.getProductByCode(code);
+                    amount = amount.add(product.getPrice());
+                    System.out.println(counter + "\t" + product.getName() + "\t" + product.getPrice());
+                    counter++;
+                } catch (Exception e) {
+                    System.out.println("nie znaleziono produktu");
+                }
             }
-            try {
-                //Product product = CodeReader.checkCode(code);
-                Product product = new Product("123124124", "Produkt", BigDecimal.valueOf(12.99));
-                amount += product.getPrice().doubleValue();
-                System.out.println(counter + "\t" + product.getName() + "\t" + product.getPrice());
-                counter++;
-            } catch (Exception e) {
-                System.out.println("nie znaleziono produktu");
-            }
+            return amount.doubleValue();
+        } catch (FileNotFoundException e) {
+            System.out.println("Nie znaleziono bazy produktow");
+            return 0d;
         }
-        return amount;
     }
 }
